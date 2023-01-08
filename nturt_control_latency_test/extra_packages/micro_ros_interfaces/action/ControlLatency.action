@@ -1,0 +1,17 @@
+# request
+# total number of tests to conduct
+int32 total_num_tests
+---
+
+# response
+# average control latency [s]
+float32 average_latency
+# standard deviation of control latency [s]
+float32 std_dev_latency
+---
+
+# feedback
+# number of test
+int32 num_test
+# control latency result of this test [s]
+float32 latency

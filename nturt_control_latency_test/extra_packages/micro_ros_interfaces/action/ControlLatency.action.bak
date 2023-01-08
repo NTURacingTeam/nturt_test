@@ -1,0 +1,23 @@
+# request
+# length of the test [s]
+float64 test_length
+# initial motor angular speed [rad/s]
+float64 initial_motor_speed
+# motor acceleration [rad/s^2]
+float64 motor_acceleration
+# accelerator pedal travel (0~1)
+float64 accelerator_travel
+---
+
+# response
+# final motor speed [rad/s]
+float64 final_motor_speed
+# final torque output [N*m]
+float64 final_torque_output
+---
+
+# feedback
+# current motor speed [rad/s]
+float64 motor_speed
+# current torque output [N*m]
+float64 torque_output
