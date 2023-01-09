@@ -35,6 +35,13 @@ def generate_launch_description():
     )
     arguments.append(
         DeclareLaunchArgument(
+            "is_echo_server",
+            default_value="false",
+            description="Arguement to determine whether this test is used as echo server.",
+        )
+    )
+    arguments.append(
+        DeclareLaunchArgument(
             "test_period",
             default_value="0.1",
             description="Arguement to determine the period between each test can messages are sent [s].",
@@ -95,6 +102,7 @@ def generate_launch_description():
         parameters=[{
             "send_id" : LaunchConfiguration("send_id"),
             "receive_id" : LaunchConfiguration("receive_id"),
+            "is_echo_server": LaunchConfiguration("is_echo_server"),
             "test_period": LaunchConfiguration("test_period"),
             "test_length": LaunchConfiguration("test_length"),
             "logging_file_name": LaunchConfiguration("logging_file_name"),
@@ -109,6 +117,7 @@ def generate_launch_description():
         parameters=[{
             "send_id" : LaunchConfiguration("send_id"),
             "receive_id" : LaunchConfiguration("receive_id"),
+            "is_echo_server": LaunchConfiguration("is_echo_server"),
         }],
         output="both",
     )

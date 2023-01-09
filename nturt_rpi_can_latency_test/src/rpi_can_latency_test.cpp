@@ -7,6 +7,7 @@ RpiCanLatencyTest::RpiCanLatencyTest() : Node("nturt_rpi_can_latency_test_node")
     // declear parameters
     this->declare_parameter("send_id", 0x010);
     this->declare_parameter("receive_id", 0x020);
+    this->declare_parameter("is_echo_server", false);
     this->declare_parameter("test_period", 0.1);
     this->declare_parameter("test_length", 60.0);
     // default logging file name to "current_time.csv"
@@ -18,29 +19,35 @@ RpiCanLatencyTest::RpiCanLatencyTest() : Node("nturt_rpi_can_latency_test_node")
     // get parameters
     send_id_ = this->get_parameter("send_id").get_parameter_value().get<uint32_t>();
     receive_id_ = this->get_parameter("receive_id").get_parameter_value().get<uint32_t>();
+    is_echo_server_ = this->get_parameter("is_echo_server").get_parameter_value().get<bool>();
     double test_period = this->get_parameter("test_period").get_parameter_value().get<double>();
     double test_length = this->get_parameter("test_length").get_parameter_value().get<double>();
     std::string logging_file_name = this->get_parameter("logging_file_name").get_parameter_value().get<std::string>();
 
-    // start timer
-    can_latency_test_timer_ = this->create_wall_timer(std::chrono::duration<double>(test_period),
-        std::bind(&RpiCanLatencyTest::can_latency_test_callback, this));
-    stopping_timer_ = this->create_wall_timer(std::chrono::duration<double>(test_length),
-        std::bind(&RpiCanLatencyTest::stopping_callback, this));
-    RCLCPP_INFO(this->get_logger(), "The test will be running for %fs at %fs per test message.", test_length, test_period);
+    if(!is_echo_server_) {
+        // start timer
+        can_latency_test_timer_ = this->create_wall_timer(std::chrono::duration<double>(test_period),
+            std::bind(&RpiCanLatencyTest::can_latency_test_callback, this));
+        stopping_timer_ = this->create_wall_timer(std::chrono::duration<double>(test_length),
+            std::bind(&RpiCanLatencyTest::stopping_callback, this));
+        RCLCPP_INFO(this->get_logger(), "The test will be running for %fs at %fs per test message.", test_length, test_period);
 
-    // register onShutdown to ros
-    rclcpp::on_shutdown(std::bind(&RpiCanLatencyTest::onShutdown, this));
+        // register onShutdown to ros
+        rclcpp::on_shutdown(std::bind(&RpiCanLatencyTest::onShutdown, this));
 
-    // open csv_file
-    std::string file = ament_index_cpp::get_package_share_directory("nturt_rpi_can_latency_test") + "/" + logging_file_name;
-    RCLCPP_INFO(this->get_logger(), "Log file at: %s", file.c_str());
-    csv_file_.open(file + logging_file_name, std::ios::out | std::ios::trunc);
+        // open csv_file
+        std::string file = ament_index_cpp::get_package_share_directory("nturt_rpi_can_latency_test") + "/" + logging_file_name;
+        RCLCPP_INFO(this->get_logger(), "Log file at: %s", file.c_str());
+        csv_file_.open(file + logging_file_name, std::ios::out | std::ios::trunc);
 
-    // csv headers
-    csv_file_ << "frame_count" << ',' << "latency[s]" << std::endl;
+        // csv headers
+        csv_file_ << "frame_count" << ',' << "latency[s]" << std::endl;
 
-    program_start_time_ = this->now().seconds();
+        program_start_time_ = this->now().seconds();
+    }
+    else {
+        RCLCPP_INFO(this->get_logger(), "This test is configured as echo server. Ctrl + C to stop.");
+    }
 }
 
 void RpiCanLatencyTest::onShutdown() {
@@ -48,16 +55,21 @@ void RpiCanLatencyTest::onShutdown() {
     csv_file_.close();
 }
 
-void RpiCanLatencyTest::onCan(const std::shared_ptr<can_msgs::msg::Frame> _msg) {
-    double now = this->now().seconds();
-    if(_msg->id == receive_id_) {
+void RpiCanLatencyTest::onCan(const can_msgs::msg::Frame &_msg) {
+    if(!is_echo_server_ && _msg.id == receive_id_) {
+        double now = this->now().seconds();
         FrameConversion compose;
-        compose.frame_data_ = _msg->data;
+        compose.frame_data_ = _msg.data;
         int frame_count = compose.information.frame_count_;
         float latency = static_cast<float>(now - program_start_time_) - compose.information.time_stemp_;
 
         // log to csv
         csv_file_ << frame_count << ',' << latency << std::endl;
+    }
+    else if(is_echo_server_ && _msg.id == send_id_) {
+        can_msgs::msg::Frame msg = _msg;
+        msg.id = receive_id_;
+        can_pub_->publish(msg);
     }
 }
 
@@ -70,7 +82,7 @@ void RpiCanLatencyTest::can_latency_test_callback() {
     frame.is_extended = false;
     frame.is_rtr = false;
 
-    // compose frame data to contain frame count and sent time
+    // compose frame data to contain frame counts and sent time
     FrameConversion compose;
     compose.information.frame_count_ = frame_count_++;
     compose.information.time_stemp_ = static_cast<float>(this->now().seconds() - program_start_time_);

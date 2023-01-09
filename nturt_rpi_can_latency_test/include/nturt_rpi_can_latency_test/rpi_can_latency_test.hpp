@@ -72,6 +72,9 @@ class RpiCanLatencyTest : public rclcpp::Node {
         /// @brief Can id that will be received as the responding can test message.
         uint32_t receive_id_;
 
+        /// @brief Flag to determine if this test is run as a echo server.
+        bool is_echo_server_;
+
         /// @brief Time stamp when this program starts, used for increasing the resolution of measured lateency.
         double program_start_time_;
 
@@ -82,7 +85,7 @@ class RpiCanLatencyTest : public rclcpp::Node {
         void onShutdown();
         
         /// @brief Callback function when receiving message from "/from_can_bus".
-        void onCan(const std::shared_ptr<can_msgs::msg::Frame> _msg);
+        void onCan(const can_msgs::msg::Frame &_msg);
 
         /// @brief Timed callback function for periodically testing can latency.
         void can_latency_test_callback();
