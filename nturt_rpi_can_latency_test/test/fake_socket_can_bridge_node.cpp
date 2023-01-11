@@ -18,9 +18,9 @@ class FakeSocketCanBridgeNode : public rclcpp::Node {
     public:
         /// @brief Constructor of fake_socket_can_bridge_node.
         FakeSocketCanBridgeNode() : Node("fake_socket_can_bridge_node"),
-        can_pub_(this->create_publisher<can_msgs::msg::Frame>("/from_can_bus", 10)),
-        can_sub_(this->create_subscription<can_msgs::msg::Frame>("/to_can_bus", 10, 
-            std::bind(&FakeSocketCanBridgeNode::onCan, this, std::placeholders::_1))) {
+            can_pub_(this->create_publisher<can_msgs::msg::Frame>("/from_can_bus", 10)),
+            can_sub_(this->create_subscription<can_msgs::msg::Frame>("/to_can_bus", 10, 
+                std::bind(&FakeSocketCanBridgeNode::onCan, this, std::placeholders::_1))) {
         
             // declear parameters
             this->declare_parameter("send_id", 0x010);

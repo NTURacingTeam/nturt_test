@@ -14,7 +14,9 @@
 #include <fstream>
 #include <functional>
 #include <memory>
+#include <stdio.h>
 #include <string>
+#include <string.h>
 
 // ros2 include
 #include "ament_index_cpp/get_package_share_directory.hpp"
@@ -59,6 +61,9 @@ class RpiCanLatencyTest : public rclcpp::Node {
         /// @brief ROS2 timer for periodically testing can latency.
         rclcpp::TimerBase::SharedPtr can_latency_test_timer_;
 
+        /// @brief ROS2 timer for starting can latency test, wait a second for everything to initialize before starting the test.
+        rclcpp::TimerBase::SharedPtr starting_timer_;
+        
         /// @brief ROS2 timer for stopping can latency test.
         rclcpp::TimerBase::SharedPtr stopping_timer_;
 
@@ -75,11 +80,23 @@ class RpiCanLatencyTest : public rclcpp::Node {
         /// @brief Flag to determine if this test is run as a echo server.
         bool is_echo_server_;
 
+        /// @brief The period between each test can messages are sent \f$[s]\f$.
+        double test_period_;
+
+        /// @brief How long the test will run \f$[s]\f$.
+        double test_length_;
+
         /// @brief Time stamp when this program starts, used for increasing the resolution of measured lateency.
         double program_start_time_;
 
         /// @brief Counter counting how much frame is sent.
         int frame_count_ = 0;
+        
+        /// @brief Buffer for storing the data before flusing to csv file at the end of the test.
+        std::unique_ptr<char[]> write_buffer_;
+        
+        /// @brief Index pointing to the end of the write_buffer.
+        int write_buffer_index_ = 0;
 
         /// @brief Callback function when ros is about to shutdown.
         void onShutdown();
@@ -89,6 +106,9 @@ class RpiCanLatencyTest : public rclcpp::Node {
 
         /// @brief Timed callback function for periodically testing can latency.
         void can_latency_test_callback();
+
+        /// @brief Timed callback function for starting can latency test, wait a second for everything to initialize before starting the test.
+        void starting_callback();
 
         /// @brief Timed callback function for stopping can latency test.
         void stopping_callback();

@@ -2,7 +2,8 @@
 
 RpiCanLatencyTest::RpiCanLatencyTest() : Node("nturt_rpi_can_latency_test_node"),
     can_pub_(this->create_publisher<can_msgs::msg::Frame>("/to_can_bus", 10)),
-    can_sub_(this->create_subscription<can_msgs::msg::Frame>("/from_can_bus", 10, std::bind(&RpiCanLatencyTest::onCan, this, std::placeholders::_1))) {
+    can_sub_(this->create_subscription<can_msgs::msg::Frame>("/from_can_bus", 10,
+        std::bind(&RpiCanLatencyTest::onCan, this, std::placeholders::_1))) {
 
     // declear parameters
     this->declare_parameter("send_id", 0x010);
@@ -20,17 +21,12 @@ RpiCanLatencyTest::RpiCanLatencyTest() : Node("nturt_rpi_can_latency_test_node")
     send_id_ = this->get_parameter("send_id").get_parameter_value().get<uint32_t>();
     receive_id_ = this->get_parameter("receive_id").get_parameter_value().get<uint32_t>();
     is_echo_server_ = this->get_parameter("is_echo_server").get_parameter_value().get<bool>();
-    double test_period = this->get_parameter("test_period").get_parameter_value().get<double>();
-    double test_length = this->get_parameter("test_length").get_parameter_value().get<double>();
+    test_period_ = this->get_parameter("test_period").get_parameter_value().get<double>();
+    test_length_ = this->get_parameter("test_length").get_parameter_value().get<double>();
     std::string logging_file_name = this->get_parameter("logging_file_name").get_parameter_value().get<std::string>();
 
     if(!is_echo_server_) {
-        // start timer
-        can_latency_test_timer_ = this->create_wall_timer(std::chrono::duration<double>(test_period),
-            std::bind(&RpiCanLatencyTest::can_latency_test_callback, this));
-        stopping_timer_ = this->create_wall_timer(std::chrono::duration<double>(test_length),
-            std::bind(&RpiCanLatencyTest::stopping_callback, this));
-        RCLCPP_INFO(this->get_logger(), "The test will be running for %fs at %fs per test message.", test_length, test_period);
+        RCLCPP_INFO(this->get_logger(), "The test will be running for %fs at %fs per test message.", test_length_, test_period_);
 
         // register onShutdown to ros
         rclcpp::on_shutdown(std::bind(&RpiCanLatencyTest::onShutdown, this));
@@ -38,10 +34,17 @@ RpiCanLatencyTest::RpiCanLatencyTest() : Node("nturt_rpi_can_latency_test_node")
         // open csv_file
         std::string file = ament_index_cpp::get_package_share_directory("nturt_rpi_can_latency_test") + "/" + logging_file_name;
         RCLCPP_INFO(this->get_logger(), "Log file at: %s", file.c_str());
-        csv_file_.open(file + logging_file_name, std::ios::out | std::ios::trunc);
+        csv_file_.open(file, std::ios::out | std::ios::trunc);
 
         // csv headers
         csv_file_ << "frame_count" << ',' << "latency[s]" << std::endl;
+
+        // allocate memory for wirte_buffer_
+        write_buffer_ = std::make_unique<char[]>(20 * test_length_ / test_period_);
+
+        // start timer
+        starting_timer_ = this->create_wall_timer(std::chrono::seconds(1), std::bind(&RpiCanLatencyTest::starting_callback, this));
+        RCLCPP_INFO(this->get_logger(), "Wait a second for everything to initialize before starting the test...");
 
         program_start_time_ = this->now().seconds();
     }
@@ -51,7 +54,7 @@ RpiCanLatencyTest::RpiCanLatencyTest() : Node("nturt_rpi_can_latency_test_node")
 }
 
 void RpiCanLatencyTest::onShutdown() {
-
+    csv_file_ << write_buffer_.get();
     csv_file_.close();
 }
 
@@ -63,8 +66,8 @@ void RpiCanLatencyTest::onCan(const can_msgs::msg::Frame &_msg) {
         int frame_count = compose.information.frame_count_;
         float latency = static_cast<float>(now - program_start_time_) - compose.information.time_stemp_;
 
-        // log to csv
-        csv_file_ << frame_count << ',' << latency << std::endl;
+        // log to write_buffer_
+        write_buffer_index_ += sprintf(write_buffer_.get() + sizeof(char) * write_buffer_index_, "%d,%f\n", frame_count, latency);
     }
     else if(is_echo_server_ && _msg.id == send_id_) {
         can_msgs::msg::Frame msg = _msg;
@@ -89,6 +92,15 @@ void RpiCanLatencyTest::can_latency_test_callback() {
     frame.data = compose.frame_data_;
     
     can_pub_->publish(frame);
+}
+
+void RpiCanLatencyTest::starting_callback() {
+    starting_timer_->cancel();
+    can_latency_test_timer_ = this->create_wall_timer(std::chrono::duration<double>(test_period_),
+        std::bind(&RpiCanLatencyTest::can_latency_test_callback, this));
+    stopping_timer_ = this->create_wall_timer(std::chrono::duration<double>(test_length_),
+            std::bind(&RpiCanLatencyTest::stopping_callback, this));
+    RCLCPP_INFO(this->get_logger(), "RPI can latency test starts now.");
 }
 
 void RpiCanLatencyTest::stopping_callback() {
