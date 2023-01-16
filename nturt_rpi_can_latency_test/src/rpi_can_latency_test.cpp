@@ -1,15 +1,29 @@
 #include "nturt_rpi_can_latency_test/rpi_can_latency_test.hpp"
 
-RpiCanLatencyTest::RpiCanLatencyTest() : Node("nturt_rpi_can_latency_test_node"),
+RpiCanLatencyTest::RpiCanLatencyTest(rclcpp::NodeOptions _options) : Node("nturt_rpi_can_latency_test_node", _options),
     can_pub_(this->create_publisher<can_msgs::msg::Frame>("/to_can_bus", 10)),
     can_sub_(this->create_subscription<can_msgs::msg::Frame>("/from_can_bus", 10,
         std::bind(&RpiCanLatencyTest::onCan, this, std::placeholders::_1))),
+    can_latency_test_timer_(this->create_wall_timer(std::chrono::duration<double>(this->declare_parameter("test_period", 0.1)),
+        std::bind(&RpiCanLatencyTest::can_latency_test_callback, this))),
+    starting_timer_(this->create_wall_timer(std::chrono::seconds(1),
+        std::bind(&RpiCanLatencyTest::starting_callback, this))),
+    stopping_timer_(this->create_wall_timer(std::chrono::duration<double>(this->declare_parameter("test_length", 60.0)),
+        std::bind(&RpiCanLatencyTest::stopping_callback, this))),
+    
     send_id_(this->declare_parameter("send_id", 0x010)),
     receive_id_(this->declare_parameter("receive_id", 0x020)),
-    is_echo_server_(this->declare_parameter("is_echo_server", false)),
-    test_period_(this->declare_parameter("test_period", 0.1)),
-    test_length_(this->declare_parameter("test_length", 60.0)) {
+    is_echo_server_(this->declare_parameter("is_echo_server", false)) {
     
+    // cancel timer
+    can_latency_test_timer_->cancel();
+    starting_timer_->cancel();
+    stopping_timer_->cancel();
+
+    // get parameter values that's already declared
+    test_period_ = this->get_parameter("test_period").get_parameter_value().get<double>();
+    test_length_ = this->get_parameter("test_length").get_parameter_value().get<double>();
+
     // default logging file name to "current_time.csv"
     char default_file_name[100];
     std::time_t now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
@@ -34,8 +48,8 @@ RpiCanLatencyTest::RpiCanLatencyTest() : Node("nturt_rpi_can_latency_test_node")
         write_buffer_ = std::make_unique<char[]>(20 * test_length_ / test_period_);
 
         // start timer
-        starting_timer_ = this->create_wall_timer(std::chrono::seconds(1), std::bind(&RpiCanLatencyTest::starting_callback, this));
         RCLCPP_INFO(this->get_logger(), "Wait a second for everything to initialize before starting the test...");
+        starting_timer_->reset();
 
         program_start_time_ = this->now().seconds();
     }
@@ -87,11 +101,10 @@ void RpiCanLatencyTest::can_latency_test_callback() {
 
 void RpiCanLatencyTest::starting_callback() {
     starting_timer_->cancel();
-    can_latency_test_timer_ = this->create_wall_timer(std::chrono::duration<double>(test_period_),
-        std::bind(&RpiCanLatencyTest::can_latency_test_callback, this));
-    stopping_timer_ = this->create_wall_timer(std::chrono::duration<double>(test_length_),
-            std::bind(&RpiCanLatencyTest::stopping_callback, this));
+
     RCLCPP_INFO(this->get_logger(), "RPI can latency test starts now.");
+    can_latency_test_timer_->reset();
+    stopping_timer_->reset();
 }
 
 void RpiCanLatencyTest::stopping_callback() {

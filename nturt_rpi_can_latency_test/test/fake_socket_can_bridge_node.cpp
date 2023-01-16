@@ -27,10 +27,11 @@
 class FakeSocketCanBridgeNode : public rclcpp::Node {
     public:
         /// @brief Constructor of fake_socket_can_bridge_node.
-        FakeSocketCanBridgeNode() : Node("fake_socket_can_bridge_node"),
+        FakeSocketCanBridgeNode(rclcpp::NodeOptions _options) : Node("fake_socket_can_bridge_node", _options),
             can_pub_(this->create_publisher<can_msgs::msg::Frame>("/from_can_bus", 10)),
             can_sub_(this->create_subscription<can_msgs::msg::Frame>("/to_can_bus", 10, 
                 std::bind(&FakeSocketCanBridgeNode::onCan, this, std::placeholders::_1))),
+            
             send_id_(this->declare_parameter("send_id", 0x010)),
             receive_id_(this->declare_parameter("receive_id", 0x020)) {
         }
@@ -63,13 +64,18 @@ class FakeSocketCanBridgeNode : public rclcpp::Node {
 };
 
 int main(int argc, char **argv) {
-    lock_memory();
-    set_thread_scheduling(pthread_self(), SCHED_FIFO, 80);
+    // real-time configuration
+    // lock_memory();
+    // set_thread_scheduling(pthread_self(), SCHED_FIFO, 80);
 
     rclcpp::init(argc, argv);
+
     rclcpp::executors::StaticSingleThreadedExecutor executor;
     rclcpp::NodeOptions options;
-    executor.add_node(std::make_shared<FakeSocketCanBridgeNode>());
+
+    rclcpp::Node::SharedPtr fake_socket_can_bridge_node = std::make_shared<FakeSocketCanBridgeNode>(options);
+
+    executor.add_node(fake_socket_can_bridge_node);
     executor.spin();
     rclcpp::shutdown();
 

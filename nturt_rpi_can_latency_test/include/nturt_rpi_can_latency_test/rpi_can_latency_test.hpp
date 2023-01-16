@@ -51,7 +51,7 @@ union FrameConversion {
 class RpiCanLatencyTest : public rclcpp::Node {
     public:
         /// @brief Constructor of rpi_can_latency_test.
-        RpiCanLatencyTest();
+        RpiCanLatencyTest(rclcpp::NodeOptions _options);
 
     private:
         /// @brief ROS2 publisher to "/to_can_bus", for sending can signal.

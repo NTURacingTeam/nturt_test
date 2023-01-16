@@ -11,15 +11,20 @@
 #include "nturt_rpi_can_latency_test/rpi_can_latency_test.hpp"
 
 int main(int argc, char **argv) {
-    lock_memory();
-    set_thread_scheduling(pthread_self(), SCHED_FIFO, 80);
-    
+    // real-time configuration
+    // lock_memory();
+    // set_thread_scheduling(pthread_self(), SCHED_FIFO, 80);
+
     rclcpp::init(argc, argv);
+    
     rclcpp::executors::StaticSingleThreadedExecutor executor;
     rclcpp::NodeOptions options;
-    executor.add_node(std::make_shared<RpiCanLatencyTest>());
+
+    rclcpp::Node::SharedPtr rpi_can_latency_test_node = std::make_shared<RpiCanLatencyTest>(options);
+
+    executor.add_node(rpi_can_latency_test_node);
     executor.spin();
     rclcpp::shutdown();
-
+    
     return 0;
 }
