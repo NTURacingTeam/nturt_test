@@ -7,6 +7,10 @@
 #ifndef RPI_CAN_LATENCY_TEST_HPP
 #define RPI_CAN_LATENCY_TEST_HPP
 
+// glibc include
+#include <stdio.h>
+#include <string.h>
+
 // std include
 #include <array>
 #include <chrono>
@@ -14,9 +18,7 @@
 #include <fstream>
 #include <functional>
 #include <memory>
-#include <stdio.h>
 #include <string>
-#include <string.h>
 
 // ros2 include
 #include "ament_index_cpp/get_package_share_directory.hpp"

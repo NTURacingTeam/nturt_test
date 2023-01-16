@@ -11,9 +11,9 @@ find_package(ament_cmake REQUIRED)
 find_package(ament_cmake_python REQUIRED)
 find_package(ament_index_cpp REQUIRED)
 find_package(can_msgs REQUIRED)
+find_package(nturt_realtime_utils REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclpy REQUIRED)
-find_package(std_msgs REQUIRED)
 
 # install python module for this package
 ament_python_install_package(${PROJECT_NAME})
@@ -24,7 +24,7 @@ include_directories(
 
 # libraries
 # library: nturt_rpi_can_latency_test
-add_library(${PROJECT_NAME} STATIC
+add_library(${PROJECT_NAME}
         src/rpi_can_latency_test.cpp
 )
 ament_target_dependencies(${PROJECT_NAME}
@@ -43,6 +43,7 @@ target_link_libraries(${PROJECT_NAME}_node
         ${PROJECT_NAME}
 )
 ament_target_dependencies(${PROJECT_NAME}_node
+        nturt_realtime_utils        
         rclcpp
 )
 
@@ -53,12 +54,13 @@ add_executable(fake_socket_can_bridge_node
 )
 ament_target_dependencies(fake_socket_can_bridge_node
         can_msgs
+        nturt_realtime_utils
         rclcpp
 )
 
 # install headers
 install(DIRECTORY include/${PROJECT_NAME}
-        DESTINATION include/${PROJECT_NAME}
+        DESTINATION include
 )
 
 # install libraries
@@ -106,9 +108,9 @@ ament_export_dependencies(
         ament_cmake_python
         ament_index
         can_msgs
+        nturt_realtime_utils
         rclcpp
         rclpy
-        std_msgs
 )
 
 ament_package()

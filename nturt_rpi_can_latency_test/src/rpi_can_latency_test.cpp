@@ -3,27 +3,18 @@
 RpiCanLatencyTest::RpiCanLatencyTest() : Node("nturt_rpi_can_latency_test_node"),
     can_pub_(this->create_publisher<can_msgs::msg::Frame>("/to_can_bus", 10)),
     can_sub_(this->create_subscription<can_msgs::msg::Frame>("/from_can_bus", 10,
-        std::bind(&RpiCanLatencyTest::onCan, this, std::placeholders::_1))) {
-
-    // declear parameters
-    this->declare_parameter("send_id", 0x010);
-    this->declare_parameter("receive_id", 0x020);
-    this->declare_parameter("is_echo_server", false);
-    this->declare_parameter("test_period", 0.1);
-    this->declare_parameter("test_length", 60.0);
+        std::bind(&RpiCanLatencyTest::onCan, this, std::placeholders::_1))),
+    send_id_(this->declare_parameter("send_id", 0x010)),
+    receive_id_(this->declare_parameter("receive_id", 0x020)),
+    is_echo_server_(this->declare_parameter("is_echo_server", false)),
+    test_period_(this->declare_parameter("test_period", 0.1)),
+    test_length_(this->declare_parameter("test_length", 60.0)) {
+    
     // default logging file name to "current_time.csv"
     char default_file_name[100];
     std::time_t now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     strftime(default_file_name, sizeof(default_file_name), "%Y-%m-%d-%H-%M-%S.csv", std::localtime(&now));
-    this->declare_parameter("logging_file_name", default_file_name);
-
-    // get parameters
-    send_id_ = this->get_parameter("send_id").get_parameter_value().get<uint32_t>();
-    receive_id_ = this->get_parameter("receive_id").get_parameter_value().get<uint32_t>();
-    is_echo_server_ = this->get_parameter("is_echo_server").get_parameter_value().get<bool>();
-    test_period_ = this->get_parameter("test_period").get_parameter_value().get<double>();
-    test_length_ = this->get_parameter("test_length").get_parameter_value().get<double>();
-    std::string logging_file_name = this->get_parameter("logging_file_name").get_parameter_value().get<std::string>();
+    std::string logging_file_name = this->declare_parameter("logging_file_name", default_file_name);
 
     if(!is_echo_server_) {
         RCLCPP_INFO(this->get_logger(), "The test will be running for %fs at %fs per test message.", test_length_, test_period_);

@@ -1,13 +1,23 @@
+// glibc include
+#include <pthread.h>
+#include <sched.h>
+#include <string.h>
+#include <sys/types.h>
+#include <unistd.h>
+
 // std include
 #include <functional>
 #include <memory>
-#include <string.h>
 
 // ros2 include
 #include "rclcpp/rclcpp.hpp"
 
 // ros2 message include
 #include "can_msgs/msg/frame.hpp"
+
+// nturt include
+#include "nturt_realtime_utils/memory_lock.hpp"
+#include "nturt_realtime_utils/scheduling.hpp"
 
 /**
  * @author QuantumSpawner jet22854111@gmail.com
@@ -20,15 +30,9 @@ class FakeSocketCanBridgeNode : public rclcpp::Node {
         FakeSocketCanBridgeNode() : Node("fake_socket_can_bridge_node"),
             can_pub_(this->create_publisher<can_msgs::msg::Frame>("/from_can_bus", 10)),
             can_sub_(this->create_subscription<can_msgs::msg::Frame>("/to_can_bus", 10, 
-                std::bind(&FakeSocketCanBridgeNode::onCan, this, std::placeholders::_1))) {
-        
-            // declear parameters
-            this->declare_parameter("send_id", 0x010);
-            this->declare_parameter("receive_id", 0x020);
-
-            // get parameters
-            send_id_ = this->get_parameter("send_id").get_parameter_value().get<uint32_t>();
-            receive_id_ = this->get_parameter("receive_id").get_parameter_value().get<uint32_t>();
+                std::bind(&FakeSocketCanBridgeNode::onCan, this, std::placeholders::_1))),
+            send_id_(this->declare_parameter("send_id", 0x010)),
+            receive_id_(this->declare_parameter("receive_id", 0x020)) {
         }
 
     private:
@@ -59,8 +63,14 @@ class FakeSocketCanBridgeNode : public rclcpp::Node {
 };
 
 int main(int argc, char **argv) {
+    lock_memory();
+    set_thread_scheduling(pthread_self(), SCHED_FIFO, 80);
+
     rclcpp::init(argc, argv);
-    rclcpp::spin(std::make_shared<FakeSocketCanBridgeNode>());
+    rclcpp::executors::StaticSingleThreadedExecutor executor;
+    rclcpp::NodeOptions options;
+    executor.add_node(std::make_shared<FakeSocketCanBridgeNode>());
+    executor.spin();
     rclcpp::shutdown();
 
     return 0;
