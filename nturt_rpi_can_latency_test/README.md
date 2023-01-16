@@ -39,3 +39,33 @@ There's also a plotting tool available for visualizing the test data, it can be 
 ```bash=
 ros2 run nturt_rpi_can_latency_test plot_test_result.py
 ```
+
+## Test Result
+
+### CAN Latency Round Trip Test
+
+TODO
+
+### ROS2 Message Round Trip Test
+
+By setting `using_fake_socket_can_bridge` launch parameter to true, this test can also be used as a round trip test for ros2 message, the results are shown here:[^3]
+
+[^3] Note: The test stands for 56 bytes of constant message size, and test messages were sent every $1ms$ for $1min$.
+
+#### Non-realtime[^4]
+
+![](doc/message_rtt/non-realtime.png "Non-realtime")
+
+#### Non-realtime, Stressed[^4]
+
+![](doc/message_rtt/non-realtime_stressed.png "Non-realtime, Stressed")
+
+#### Realtime[^4]
+
+![](doc/message_rtt/realtime.png "Realtime")
+
+#### Realtime, Stressed[^4]
+
+![](doc/message_rtt/realtime_stressed.png "Realtime, Stressed")
+
+[^4]: Note: The title of the figures are wrong, but I'm too lazy to change them.

@@ -31,7 +31,7 @@ class FakeSocketCanBridgeNode : public rclcpp::Node {
             can_pub_(this->create_publisher<can_msgs::msg::Frame>("/from_can_bus", 10)),
             can_sub_(this->create_subscription<can_msgs::msg::Frame>("/to_can_bus", 10, 
                 std::bind(&FakeSocketCanBridgeNode::onCan, this, std::placeholders::_1))),
-            
+
             send_id_(this->declare_parameter("send_id", 0x010)),
             receive_id_(this->declare_parameter("receive_id", 0x020)) {
         }
@@ -42,7 +42,7 @@ class FakeSocketCanBridgeNode : public rclcpp::Node {
 
         /// @brief ROS2 sbscriber to "/to_can_bus", for receiving can signal sending requirement from other nodes.
         rclcpp::Subscription<can_msgs::msg::Frame>::SharedPtr can_sub_;
-        
+
         // internal states
         /// @brief Can id that the test can message will be sent.
         uint32_t send_id_;
@@ -65,8 +65,8 @@ class FakeSocketCanBridgeNode : public rclcpp::Node {
 
 int main(int argc, char **argv) {
     // real-time configuration
-    // lock_memory();
-    // set_thread_scheduling(pthread_self(), SCHED_FIFO, 80);
+    lock_memory();
+    set_thread_scheduling(pthread_self(), SCHED_FIFO, 80);
 
     rclcpp::init(argc, argv);
 

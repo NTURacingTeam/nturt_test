@@ -20,7 +20,7 @@ class PlotTestResult:
     def __init__(self):
         self.__file_name, self.__frame_count, self.__latency = self.__load_csv_file()
         self.__plot_result()
-    
+
     def __load_csv_file(self):
         # get all csv files in "nturt_rpi_can_latency_test" package shared directory
         csv_files = glob(get_package_share_directory("nturt_rpi_can_latency_test") + '/*.csv')
@@ -30,7 +30,7 @@ class PlotTestResult:
         elif len(csv_files) > 1:
             print(f"{self.__bold_yellow}Warn: {self.__bode_white}Multiple data exists. {self.__white}Choosing most recent one.")
             csv_files.sort(reverse=True)
-        
+
         file_name = csv_files[0]
 
         print(f"Loding data from: {file_name}")

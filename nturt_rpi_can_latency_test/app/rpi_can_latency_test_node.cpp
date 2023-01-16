@@ -12,11 +12,11 @@
 
 int main(int argc, char **argv) {
     // real-time configuration
-    // lock_memory();
-    // set_thread_scheduling(pthread_self(), SCHED_FIFO, 80);
+    lock_memory();
+    set_thread_scheduling(pthread_self(), SCHED_FIFO, 80);
 
     rclcpp::init(argc, argv);
-    
+
     rclcpp::executors::StaticSingleThreadedExecutor executor;
     rclcpp::NodeOptions options;
 
@@ -25,6 +25,6 @@ int main(int argc, char **argv) {
     executor.add_node(rpi_can_latency_test_node);
     executor.spin();
     rclcpp::shutdown();
-    
+
     return 0;
 }

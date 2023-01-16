@@ -10,11 +10,11 @@ RpiCanLatencyTest::RpiCanLatencyTest(rclcpp::NodeOptions _options) : Node("nturt
         std::bind(&RpiCanLatencyTest::starting_callback, this))),
     stopping_timer_(this->create_wall_timer(std::chrono::duration<double>(this->declare_parameter("test_length", 60.0)),
         std::bind(&RpiCanLatencyTest::stopping_callback, this))),
-    
+
     send_id_(this->declare_parameter("send_id", 0x010)),
     receive_id_(this->declare_parameter("receive_id", 0x020)),
     is_echo_server_(this->declare_parameter("is_echo_server", false)) {
-    
+
     // cancel timer
     can_latency_test_timer_->cancel();
     starting_timer_->cancel();
@@ -95,7 +95,7 @@ void RpiCanLatencyTest::can_latency_test_callback() {
     compose.information.frame_count_ = frame_count_++;
     compose.information.time_stemp_ = static_cast<float>(this->now().seconds() - program_start_time_);
     frame.data = compose.frame_data_;
-    
+
     can_pub_->publish(frame);
 }
 
@@ -111,7 +111,7 @@ void RpiCanLatencyTest::stopping_callback() {
     can_latency_test_timer_->cancel();
     RCLCPP_INFO(this->get_logger(), "Rpi can latency test complete, waiting 1 second for not yet arrived frames...");
     rclcpp::sleep_for(1s);
-    
+
     RCLCPP_INFO(this->get_logger(), "Test completed, shutting down ros.");
     rclcpp::shutdown();
 }

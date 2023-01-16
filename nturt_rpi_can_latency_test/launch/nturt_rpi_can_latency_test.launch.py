@@ -61,7 +61,7 @@ def generate_launch_description():
             description="Arguement to determine the logging file name.",
         )
     )
-    
+
     # initialize arguments
     using_fake_socket_can_bridge = LaunchConfiguration("using_fake_socket_can_bridge")
 

@@ -65,13 +65,13 @@ class RpiCanLatencyTest : public rclcpp::Node {
 
         /// @brief ROS2 timer for starting can latency test, wait a second for everything to initialize before starting the test.
         rclcpp::TimerBase::SharedPtr starting_timer_;
-        
+
         /// @brief ROS2 timer for stopping can latency test.
         rclcpp::TimerBase::SharedPtr stopping_timer_;
 
         /// @brief CSV file for logging the test data.
         std::fstream csv_file_;
-        
+
         // internal states
         /// @brief Can id that the test can message will be sent.
         uint32_t send_id_;
@@ -93,16 +93,16 @@ class RpiCanLatencyTest : public rclcpp::Node {
 
         /// @brief Counter counting how much frame is sent.
         int frame_count_ = 0;
-        
+
         /// @brief Buffer for storing the data before flusing to csv file at the end of the test.
         std::unique_ptr<char[]> write_buffer_;
-        
+
         /// @brief Index pointing to the end of the write_buffer.
         int write_buffer_index_ = 0;
 
         /// @brief Callback function when ros is about to shutdown.
         void onShutdown();
-        
+
         /// @brief Callback function when receiving message from "/from_can_bus".
         void onCan(const can_msgs::msg::Frame &_msg);
 
