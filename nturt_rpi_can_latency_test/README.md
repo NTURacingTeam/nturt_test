@@ -50,7 +50,7 @@ TODO
 
 By setting `using_fake_socket_can_bridge` launch parameter to true, this test can also be used as a round trip test for ros2 message, the results are shown here:[^3]
 
-[^3] Note: The test stands for 56 bytes of constant message size, and test messages were sent every $1ms$ for $1min$.
+[^3]: The test stands for 56 bytes of constant message size, and test messages were sent every $1ms$ for $1min$.
 
 #### Non-realtime[^4]
 
@@ -68,4 +68,4 @@ By setting `using_fake_socket_can_bridge` launch parameter to true, this test ca
 
 ![](doc/message_rtt/realtime_stressed.png "Realtime, Stressed")
 
-[^4]: Note: The title of the figures are wrong, but I'm too lazy to change them.
+[^4]: The title of the figures are wrong, but I'm too lazy to change them.
