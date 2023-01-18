@@ -76,8 +76,9 @@ install(TARGETS ${PROJECT_NAME}_node fake_socket_can_bridge_node
 )
 
 # install python scripts
-install(PROGRAMS scripts/plot_test_result.py
-        DESTINATION lib/${PROJECT_NAME})
+install(DIRECTORY scripts/
+        DESTINATION lib/${PROJECT_NAME}
+)
 
 # install launch scripts
 install(DIRECTORY launch

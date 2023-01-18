@@ -1,17 +1,30 @@
 from datetime import datetime
 
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, Shutdown
+from launch.actions import DeclareLaunchArgument, GroupAction, IncludeLaunchDescription, RegisterEventHandler, Shutdown
 from launch.conditions import IfCondition, UnlessCondition
+from launch.event_handlers import OnProcessExit
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution, PythonExpression
 
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 
+# conditional sustitution for realtime node argument
+def _realtime_command(condition):
+    cmd = ['"--realtime" if "true" == "', condition, '" else ""']
+    return PythonExpression(cmd)
+
 def generate_launch_description():
     # declare arguments
     arguments = []
+    arguments.append(
+        DeclareLaunchArgument(
+            "is_realtime",
+            default_value="true",
+            description="Arguement to determine whether this test is running in realtime process.",
+        )
+    )
     arguments.append(
         DeclareLaunchArgument(
             "using_fake_socket_can_bridge",
@@ -63,7 +76,14 @@ def generate_launch_description():
     )
 
     # initialize arguments
+    is_realtime = LaunchConfiguration("is_realtime")
     using_fake_socket_can_bridge = LaunchConfiguration("using_fake_socket_can_bridge")
+    send_id = LaunchConfiguration("send_id")
+    receive_id = LaunchConfiguration("receive_id")
+    is_echo_server = LaunchConfiguration("is_echo_server")
+    test_period = LaunchConfiguration("test_period")
+    test_length = LaunchConfiguration("test_length")
+    logging_file_name = LaunchConfiguration("logging_file_name")
 
     # declare include files
     # node for receiving can signal
@@ -75,7 +95,6 @@ def generate_launch_description():
                 "socket_can_receiver.launch.py",
             ]),
         ]),
-        condition=UnlessCondition(using_fake_socket_can_bridge),
     )
     # node for sending can signal
     socket_can_sender = IncludeLaunchDescription(
@@ -86,45 +105,84 @@ def generate_launch_description():
                 "socket_can_sender.launch.py",
             ]),
         ]),
-        condition=UnlessCondition(using_fake_socket_can_bridge),
     )
 
-    includes = [
-        socket_can_receiver,
-        socket_can_sender,
-    ]
-
-    # declare nodes
+    # declare node
+    # node for configuring can bus
+    configure_can_node = Node(
+        package="nturt_can_parser",
+        executable="configure_can.sh",
+        output="both",
+    )
+    # node for sending/receiving can signals
+    socket_can_bridge_node = Node(
+        package="nturt_can_parser",
+        executable="socket_can_bridge_node",
+        output="both",
+    )
     # node for testing rpi can latency
     nturt_rpi_can_latency_test_node = Node(
         package="nturt_rpi_can_latency_test",
         executable="nturt_rpi_can_latency_test_node",
         parameters=[{
-            "send_id" : LaunchConfiguration("send_id"),
-            "receive_id" : LaunchConfiguration("receive_id"),
-            "is_echo_server": LaunchConfiguration("is_echo_server"),
-            "test_period": LaunchConfiguration("test_period"),
-            "test_length": LaunchConfiguration("test_length"),
-            "logging_file_name": LaunchConfiguration("logging_file_name"),
+            "send_id" : send_id,
+            "receive_id" : receive_id,
+            "is_echo_server": is_echo_server,
+            "test_period": test_period,
+            "test_length": test_length,
+            "logging_file_name": logging_file_name,
         }],
+        arguments=[
+            _realtime_command(is_realtime),
+        ],
         output="both",
         on_exit=Shutdown(),
     )
+    # node for echoing the message back to the test node
     fake_socker_can_bridge_node = Node(
-        condition=IfCondition(using_fake_socket_can_bridge),
         package="nturt_rpi_can_latency_test",
         executable="fake_socket_can_bridge_node",
         parameters=[{
-            "send_id" : LaunchConfiguration("send_id"),
-            "receive_id" : LaunchConfiguration("receive_id"),
-            "is_echo_server": LaunchConfiguration("is_echo_server"),
+            "send_id" : send_id,
+            "receive_id" : receive_id,
+            "is_echo_server": is_echo_server,
         }],
+        arguments=[
+            _realtime_command(is_realtime),
+        ],
         output="both",
     )
 
-    nodes = [
-        nturt_rpi_can_latency_test_node,
-        fake_socker_can_bridge_node
-    ]
+    # declare event handler
+    delay_after_configure_can_node = RegisterEventHandler(
+        event_handler=OnProcessExit(
+            target_action=configure_can_node,
+            on_exit=[
+                socket_can_receiver,
+                socket_can_sender,
+            ],
+        )
+    )
 
-    return LaunchDescription(arguments + includes + nodes)
+    # declare action group
+    if_using_fake_socket_can_bridge = GroupAction(
+        actions=[
+            fake_socker_can_bridge_node,
+        ],
+        condition=IfCondition(using_fake_socket_can_bridge),
+    )
+    unless_using_fake_socket_can_bridge = GroupAction(
+        actions=[
+            configure_can_node,
+            delay_after_configure_can_node,
+        ],
+        condition=UnlessCondition(using_fake_socket_can_bridge),
+    )
+
+    return LaunchDescription(
+        arguments + [
+            nturt_rpi_can_latency_test_node,
+            if_using_fake_socket_can_bridge,
+            unless_using_fake_socket_can_bridge,
+        ]
+    )
