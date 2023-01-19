@@ -1,9 +1,8 @@
 from datetime import datetime
 
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, GroupAction, IncludeLaunchDescription, RegisterEventHandler, Shutdown
+from launch.actions import DeclareLaunchArgument, GroupAction, IncludeLaunchDescription, Shutdown
 from launch.conditions import IfCondition, UnlessCondition
-from launch.event_handlers import OnProcessExit
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution, PythonExpression
 
@@ -56,7 +55,7 @@ def generate_launch_description():
     arguments.append(
         DeclareLaunchArgument(
             "test_period",
-            default_value="0.1",
+            default_value="0.01",
             description="Arguement to determine the period between each test can messages are sent [s].",
         )
     )
@@ -86,34 +85,18 @@ def generate_launch_description():
     logging_file_name = LaunchConfiguration("logging_file_name")
 
     # declare include files
-    # node for receiving can signal
-    socket_can_receiver = IncludeLaunchDescription(
+    # file for sending/receiving can signal
+    socket_can_bridge = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([
             PathJoinSubstitution([
-                FindPackageShare("ros2_socketcan"),
+                FindPackageShare("nturt_can_parser"),
                 "launch",
-                "socket_can_receiver.launch.py",
-            ]),
-        ]),
-    )
-    # node for sending can signal
-    socket_can_sender = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource([
-            PathJoinSubstitution([
-                FindPackageShare("ros2_socketcan"),
-                "launch",
-                "socket_can_sender.launch.py",
+                "socket_can_bridge.launch.py",
             ]),
         ]),
     )
 
     # declare node
-    # node for configuring can bus
-    configure_can_node = Node(
-        package="nturt_can_parser",
-        executable="configure_can.sh",
-        output="both",
-    )
     # node for sending/receiving can signals
     socket_can_bridge_node = Node(
         package="nturt_can_parser",
@@ -153,17 +136,6 @@ def generate_launch_description():
         output="both",
     )
 
-    # declare event handler
-    delay_after_configure_can_node = RegisterEventHandler(
-        event_handler=OnProcessExit(
-            target_action=configure_can_node,
-            on_exit=[
-                socket_can_receiver,
-                socket_can_sender,
-            ],
-        )
-    )
-
     # declare action group
     if_using_fake_socket_can_bridge = GroupAction(
         actions=[
@@ -173,8 +145,7 @@ def generate_launch_description():
     )
     unless_using_fake_socket_can_bridge = GroupAction(
         actions=[
-            configure_can_node,
-            delay_after_configure_can_node,
+            socket_can_bridge,
         ],
         condition=UnlessCondition(using_fake_socket_can_bridge),
     )

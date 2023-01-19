@@ -4,7 +4,7 @@ RpiCanLatencyTest::RpiCanLatencyTest(rclcpp::NodeOptions _options) : Node("nturt
     can_pub_(this->create_publisher<can_msgs::msg::Frame>("/to_can_bus", 10)),
     can_sub_(this->create_subscription<can_msgs::msg::Frame>("/from_can_bus", 10,
         std::bind(&RpiCanLatencyTest::onCan, this, std::placeholders::_1))),
-    can_latency_test_timer_(this->create_wall_timer(std::chrono::duration<double>(this->declare_parameter("test_period", 0.1)),
+    can_latency_test_timer_(this->create_wall_timer(std::chrono::duration<double>(this->declare_parameter("test_period", 0.01)),
         std::bind(&RpiCanLatencyTest::can_latency_test_callback, this))),
     starting_timer_(this->create_wall_timer(std::chrono::seconds(1),
         std::bind(&RpiCanLatencyTest::starting_callback, this))),
@@ -115,3 +115,6 @@ void RpiCanLatencyTest::stopping_callback() {
     RCLCPP_INFO(this->get_logger(), "Test completed, shutting down ros.");
     rclcpp::shutdown();
 }
+
+#include "rclcpp_components/register_node_macro.hpp"
+RCLCPP_COMPONENTS_REGISTER_NODE(RpiCanLatencyTest)

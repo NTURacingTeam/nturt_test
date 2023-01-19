@@ -13,6 +13,7 @@ find_package(ament_index_cpp REQUIRED)
 find_package(can_msgs REQUIRED)
 find_package(nturt_realtime_utils REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(rclcpp_components REQUIRED)
 find_package(rclpy REQUIRED)
 
 # install python module for this package
@@ -24,15 +25,20 @@ include_directories(
 
 # libraries
 # library: nturt_rpi_can_latency_test
-add_library(${PROJECT_NAME}
+add_library(${PROJECT_NAME} SHARED
         src/rpi_can_latency_test.cpp
 )
 ament_target_dependencies(${PROJECT_NAME}
         ament_index_cpp
         can_msgs
         rclcpp
+        rclcpp_components
         std_msgs
 )
+# register to node components
+# node component: RpiCanLatencyTest
+rclcpp_components_register_nodes(nturt_rpi_can_latency_test "RpiCanLatencyTest")
+set(node_plugins "${node_plugins}RpiCanLatencyTest;$<TARGET_FILE:nturt_rpi_can_latency_test>\n")
 
 # applications
 # executable: nturt_rpi_can_latency_test_node
