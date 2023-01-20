@@ -104,6 +104,9 @@ class RpiCanLatencyTest : public rclcpp::Node {
         /// @brief Counter counting how many can singals were received.
         int received_count_ = 0;
 
+        /// @brief Counter counting how many can singals were received last time progress_callback is called, used for echo server.
+        int last_received_count_ = 0;
+
         /// @brief Buffer for storing the data before flusing to csv file at the end of the test.
         std::unique_ptr<char[]> write_buffer_;
 

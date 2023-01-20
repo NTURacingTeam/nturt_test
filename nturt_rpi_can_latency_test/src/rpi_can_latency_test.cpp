@@ -26,20 +26,21 @@ RpiCanLatencyTest::RpiCanLatencyTest(rclcpp::NodeOptions _options) : Node("nturt
     // cancel timer
     can_latency_test_timer_->cancel();
     starting_timer_->cancel();
-    progress_timer_->cancel();
-
-    // get parameter values that's already declared
-    test_period_ = this->get_parameter("test_period").get_parameter_value().get<double>();
-
-    total_count_ = static_cast<int>(test_length_ / test_period_);
-
-    // default logging file name to "current_time.csv"
-    char default_file_name[100];
-    std::time_t now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-    strftime(default_file_name, sizeof(default_file_name), "%Y-%m-%d-%H-%M-%S.csv", std::localtime(&now));
-    std::string logging_file_name = this->declare_parameter("logging_file_name", default_file_name);
-
+    
     if(!is_echo_server_) {
+        starting_timer_->call();
+
+        // get parameter values that's already declared
+        test_period_ = this->get_parameter("test_period").get_parameter_value().get<double>();
+
+        total_count_ = static_cast<int>(test_length_ / test_period_);
+
+        // default logging file name to "current_time.csv"
+        char default_file_name[100];
+        std::time_t now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+        strftime(default_file_name, sizeof(default_file_name), "%Y-%m-%d-%H-%M-%S.csv", std::localtime(&now));
+        std::string logging_file_name = this->declare_parameter("logging_file_name", default_file_name);
+
         RCLCPP_INFO(this->get_logger(), "The test will be running for %fs at %fs per test message.", test_length_, test_period_);
 
         // register onShutdown to ros
@@ -76,6 +77,8 @@ void RpiCanLatencyTest::onShutdown() {
 }
 
 void RpiCanLatencyTest::onCan(const can_msgs::msg::Frame &_msg) {
+    received_count_++;
+
     if(!is_echo_server_ && _msg.id == receive_id_) {
         double now = this->now().seconds();
         FrameConversion compose;
@@ -85,7 +88,6 @@ void RpiCanLatencyTest::onCan(const can_msgs::msg::Frame &_msg) {
 
         // log to write_buffer_
         write_buffer_index_ += sprintf(write_buffer_.get() + sizeof(char) * write_buffer_index_, "%d,%f\n", frame_count, latency);
-        received_count_++;
     }
     else if(is_echo_server_ && _msg.id == send_id_) {
         can_msgs::msg::Frame msg = _msg;
@@ -132,19 +134,26 @@ void RpiCanLatencyTest::starting_callback() {
 }
 
 void RpiCanLatencyTest::progress_callback() {
-    int green_bar_length = static_cast<int>(bar_length * received_count_ / total_count_);
-    int blue_bar_length = static_cast<int>(bar_length * (sent_count_ - received_count_) / total_count_);
-    int empty_bar_length = bar_length - green_bar_length - blue_bar_length;
-    terminal_ <<std::fixed << "progress: ["
-        << green << std::string(green_bar_length, '|')
-        << blue << std::string(blue_bar_length, '|')
-        << reset << std::string(empty_bar_length, ' ')
-        << "] sent: "
-        << blue << sent_count_ << '(' << std::setprecision(1) << 100.0 * sent_count_ / total_count_ << "%)"
-        << reset << " received: "
-        << green << received_count_ << '(' << std::setprecision(1) << 100.0 * received_count_ / total_count_ << "%)"
-        << reset << " total: " << total_count_ << " receive rate: " << std::setprecision(5) << 100.0 * received_count_ / sent_count_ << "%\r";
-    terminal_.flush();
+    if(!is_echo_server_) {
+        int green_bar_length = static_cast<int>(bar_length * received_count_ / total_count_);
+        int blue_bar_length = static_cast<int>(bar_length * (sent_count_ - received_count_) / total_count_);
+        int empty_bar_length = bar_length - green_bar_length - blue_bar_length;
+        terminal_ << std::fixed << "progress: ["
+            << green << std::string(green_bar_length, '|')
+            << blue << std::string(blue_bar_length, '|')
+            << reset << std::string(empty_bar_length, ' ')
+            << "] sent: "
+            << blue << sent_count_ << '(' << std::setprecision(1) << 100.0 * sent_count_ / total_count_ << "%)"
+            << reset << " received: "
+            << green << received_count_ << '(' << std::setprecision(1) << 100.0 * received_count_ / total_count_ << "%)"
+            << reset << " total: " << total_count_ << " receive rate: " << std::setprecision(5) << 100.0 * received_count_ / sent_count_ << "%\r";
+        terminal_.flush();
+    }
+    else {
+        terminal_ << std::fixed << "Received: " << std::setprecision(5) << static_cast<double>(received_count_ - last_received_count_)
+            << " during last second.\r";
+        terminal_.flush();
+    }
 }
 
 #include "rclcpp_components/register_node_macro.hpp"
