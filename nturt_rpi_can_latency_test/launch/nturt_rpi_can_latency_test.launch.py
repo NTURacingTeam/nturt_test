@@ -97,12 +97,6 @@ def generate_launch_description():
     )
 
     # declare node
-    # node for sending/receiving can signals
-    socket_can_bridge_node = Node(
-        package="nturt_can_parser",
-        executable="socket_can_bridge_node",
-        output="both",
-    )
     # node for testing rpi can latency
     nturt_rpi_can_latency_test_node = Node(
         package="nturt_rpi_can_latency_test",
@@ -119,6 +113,7 @@ def generate_launch_description():
             _realtime_command(is_realtime),
         ],
         output="both",
+        emulate_tty=True,
         on_exit=Shutdown(),
     )
     # node for echoing the message back to the test node

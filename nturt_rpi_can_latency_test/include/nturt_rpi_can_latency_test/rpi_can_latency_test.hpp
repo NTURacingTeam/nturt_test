@@ -17,6 +17,7 @@
 #include <ctime>
 #include <fstream>
 #include <functional>
+#include <iomanip>
 #include <memory>
 #include <string>
 
@@ -66,11 +67,14 @@ class RpiCanLatencyTest : public rclcpp::Node {
         /// @brief ROS2 timer for starting can latency test, wait a second for everything to initialize before starting the test.
         rclcpp::TimerBase::SharedPtr starting_timer_;
 
-        /// @brief ROS2 timer for stopping can latency test.
-        rclcpp::TimerBase::SharedPtr stopping_timer_;
+        /// @brief ROS2 timer for periodically showing the test progress.
+        rclcpp::TimerBase::SharedPtr progress_timer_;
 
         /// @brief CSV file for logging the test data.
         std::fstream csv_file_;
+
+        /// @brief Steam to terminal.
+        std::fstream terminal_;
 
         // internal states
         /// @brief Can id that the test can message will be sent.
@@ -91,8 +95,14 @@ class RpiCanLatencyTest : public rclcpp::Node {
         /// @brief Time stamp when this program starts, used for increasing the resolution of measured lateency.
         double program_start_time_;
 
-        /// @brief Counter counting how much frame is sent.
-        int frame_count_ = 0;
+        /// @brief Total test message to sent, calculated by $text{test_length}/text{test_period}$.
+        int total_count_;
+
+        /// @brief Counter counting how many can signals were sent.
+        int sent_count_ = 0;
+
+        /// @brief Counter counting how many can singals were received.
+        int received_count_ = 0;
 
         /// @brief Buffer for storing the data before flusing to csv file at the end of the test.
         std::unique_ptr<char[]> write_buffer_;
@@ -112,8 +122,8 @@ class RpiCanLatencyTest : public rclcpp::Node {
         /// @brief Timed callback function for starting can latency test, wait a second for everything to initialize before starting the test.
         void starting_callback();
 
-        /// @brief Timed callback function for stopping can latency test.
-        void stopping_callback();
+        /// @brief Timed callback function for showing test progress.
+        void progress_callback();
 };
 
 #endif // RPI_CAN_LATENCY_TEST_HPP

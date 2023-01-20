@@ -63,6 +63,13 @@ ament_target_dependencies(fake_socket_can_bridge_node
         nturt_realtime_utils
         rclcpp
 )
+# executable: progress_bar_node
+add_executable(progress_bar_node
+        test/progress_bar_node.cpp
+)
+ament_target_dependencies(progress_bar_node
+        rclcpp
+)
 
 # install headers
 install(DIRECTORY include/${PROJECT_NAME}
@@ -77,7 +84,7 @@ install(TARGETS ${PROJECT_NAME}
 )
 
 # install applications, test executables
-install(TARGETS ${PROJECT_NAME}_node fake_socket_can_bridge_node
+install(TARGETS ${PROJECT_NAME}_node fake_socket_can_bridge_node progress_bar_node
         DESTINATION lib/${PROJECT_NAME}
 )
 

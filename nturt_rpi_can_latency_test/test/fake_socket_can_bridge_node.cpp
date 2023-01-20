@@ -25,13 +25,13 @@
  * @brief Class for echoing can signal from "/to_can_bus" to "/from_can_bus", only change can id to "receive_id"
  * when receiving frame with can id "send_id".
  */
-class FakeSocketCanBridgeNode : public rclcpp::Node {
+class FakeSocketCanBridge : public rclcpp::Node {
     public:
         /// @brief Constructor of fake_socket_can_bridge_node.
-        FakeSocketCanBridgeNode(rclcpp::NodeOptions _options) : Node("fake_socket_can_bridge_node", _options),
+        FakeSocketCanBridge(rclcpp::NodeOptions _options) : Node("fake_socket_can_bridge_node", _options),
             can_pub_(this->create_publisher<can_msgs::msg::Frame>("/from_can_bus", 10)),
             can_sub_(this->create_subscription<can_msgs::msg::Frame>("/to_can_bus", 10, 
-                std::bind(&FakeSocketCanBridgeNode::onCan, this, std::placeholders::_1))),
+                std::bind(&FakeSocketCanBridge::onCan, this, std::placeholders::_1))),
 
             send_id_(this->declare_parameter("send_id", 0x010)),
             receive_id_(this->declare_parameter("receive_id", 0x020)) {
@@ -90,7 +90,7 @@ int main(int argc, char **argv) {
     rclcpp::executors::StaticSingleThreadedExecutor executor;
     rclcpp::NodeOptions options;
 
-    rclcpp::Node::SharedPtr fake_socket_can_bridge_node = std::make_shared<FakeSocketCanBridgeNode>(options);
+    rclcpp::Node::SharedPtr fake_socket_can_bridge_node = std::make_shared<FakeSocketCanBridge>(options);
 
     executor.add_node(fake_socket_can_bridge_node);
     executor.spin();
