@@ -2,7 +2,7 @@
 
 # general import
 import csv
-from glob import glob
+import glob
 import matplotlib.pyplot as plt
 import numpy as np
 import statistics
@@ -23,7 +23,7 @@ class PlotTestResult:
 
     def __load_csv_file(self):
         # get all csv files in "nturt_rpi_can_latency_test" package shared directory
-        csv_files = glob(get_package_share_directory("nturt_rpi_can_latency_test") + '/*.csv')
+        csv_files = glob.glob(get_package_share_directory("nturt_rpi_can_latency_test") + '/*.csv')
         if len(csv_files) < 1:
             print(f"{self.__bold_red}Error: {self.__bode_white}No data yet available. {self.__white}Please launch the test node first to create one.")
             exit()

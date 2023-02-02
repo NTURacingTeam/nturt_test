@@ -4,7 +4,7 @@
 
 This ROS2 package is used for determining the latency inherent to ROS2 node -- ROS2 transport layer -- ros2_socketcan (replacement of socket_can_bridge in ROS1) -- socketCAN -- CAN HAT. In order to properly pin point the latency source of the controll system.
 
-This test is basically a `round trip test`, where the message will first be sent as described above, and then sent back in similar order. If neglecting the latency of the response side (where the exact same message is sent back to rpi, and hopely the respond side is at low latency such as a ,icrocontroller), the latency can be calculated by dividing the total latency by two.
+This test is basically a `round trip test`, where the message will first be sent as described above, and then sent back in similar order. If neglecting the latency of the response side (where the exact same message is sent back to rpi, and hopely the respond side is at low latency such as a microcontroller), the latency can be calculated by dividing the total latency by two.
 
 ## Usage
 

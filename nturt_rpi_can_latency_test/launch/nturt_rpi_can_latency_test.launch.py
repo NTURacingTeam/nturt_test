@@ -10,7 +10,7 @@ from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 
 # conditional sustitution for realtime node argument
-def _realtime_command(condition):
+def __realtime_command(condition):
     cmd = ['"--realtime" if "true" == "', condition, '" else ""']
     return PythonExpression(cmd)
 
@@ -110,7 +110,7 @@ def generate_launch_description():
             "logging_file_name": logging_file_name,
         }],
         arguments=[
-            _realtime_command(is_realtime),
+            __realtime_command(is_realtime),
         ],
         output="both",
         emulate_tty=True,
@@ -126,7 +126,7 @@ def generate_launch_description():
             "is_echo_server": is_echo_server,
         }],
         arguments=[
-            _realtime_command(is_realtime),
+            __realtime_command(is_realtime),
         ],
         output="both",
     )
