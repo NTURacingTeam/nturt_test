@@ -22,79 +22,81 @@
 
 /**
  * @author QuantumSpawner jet22854111@gmail.com
- * @brief Class for echoing can signal from "/to_can_bus" to "/from_can_bus", only change can id to "receive_id"
- * when receiving frame with can id "send_id".
+ * @brief Class for echoing can signal from "/to_can_bus" to "/from_can_bus",
+ * only change can id to "receive_id" when receiving frame with can id
+ * "send_id".
  */
 class FakeSocketCanBridge : public rclcpp::Node {
-    public:
-        /// @brief Constructor of fake_socket_can_bridge_node.
-        FakeSocketCanBridge(rclcpp::NodeOptions _options) : Node("fake_socket_can_bridge_node", _options),
-            can_pub_(this->create_publisher<can_msgs::msg::Frame>("/from_can_bus", 10)),
-            can_sub_(this->create_subscription<can_msgs::msg::Frame>("/to_can_bus", 10, 
-                std::bind(&FakeSocketCanBridge::onCan, this, std::placeholders::_1))),
+ public:
+  /// @brief Constructor of fake_socket_can_bridge_node.
+  FakeSocketCanBridge(rclcpp::NodeOptions _options)
+      : Node("fake_socket_can_bridge_node", _options),
+        can_pub_(
+            this->create_publisher<can_msgs::msg::Frame>("/from_can_bus", 10)),
+        can_sub_(this->create_subscription<can_msgs::msg::Frame>(
+            "/to_can_bus", 10,
+            std::bind(&FakeSocketCanBridge::onCan, this,
+                      std::placeholders::_1))),
 
-            send_id_(this->declare_parameter("send_id", 0x010)),
-            receive_id_(this->declare_parameter("receive_id", 0x020)) {
-        }
+        send_id_(this->declare_parameter("send_id", 0x010)),
+        receive_id_(this->declare_parameter("receive_id", 0x020)) {}
 
-    private:
-        /// @brief ROS2 publisher to "/from_can_bus", for sending fake received can signal to other nodes.
-        rclcpp::Publisher<can_msgs::msg::Frame>::SharedPtr can_pub_;
+ private:
+  /// @brief ROS2 publisher to "/from_can_bus", for sending fake received can
+  /// signal to other nodes.
+  rclcpp::Publisher<can_msgs::msg::Frame>::SharedPtr can_pub_;
 
-        /// @brief ROS2 sbscriber to "/to_can_bus", for receiving can signal sending requirement from other nodes.
-        rclcpp::Subscription<can_msgs::msg::Frame>::SharedPtr can_sub_;
+  /// @brief ROS2 sbscriber to "/to_can_bus", for receiving can signal sending
+  /// requirement from other nodes.
+  rclcpp::Subscription<can_msgs::msg::Frame>::SharedPtr can_sub_;
 
-        // internal states
-        /// @brief Can id that the test can message will be sent.
-        uint32_t send_id_;
+  // internal states
+  /// @brief Can id that the test can message will be sent.
+  uint32_t send_id_;
 
-        /// @brief Can id that will be received as the responding can test message.
-        uint32_t receive_id_;
+  /// @brief Can id that will be received as the responding can test message.
+  uint32_t receive_id_;
 
-        /// @brief Callback function when receiving message from "/to_can_bus".
-        void onCan(const can_msgs::msg::Frame &_msg) {
-            if(_msg.id == send_id_) {
-                auto msg = _msg;
-                msg.id = receive_id_;
-                can_pub_->publish(msg);
-            }
-            else {
-                can_pub_->publish(_msg);
-            }
-        }
+  /// @brief Callback function when receiving message from "/to_can_bus".
+  void onCan(const can_msgs::msg::Frame &_msg) {
+    if (_msg.id == send_id_) {
+      auto msg = _msg;
+      msg.id = receive_id_;
+      can_pub_->publish(msg);
+    } else {
+      can_pub_->publish(_msg);
+    }
+  }
 };
 
 static const std::list<std::string> realtime_keys = {
-    "realtime",
-    "real-time",
-    "real_time",
-    "--realtime",
-    "--real-time",
-    "--real_time",
+    "realtime",   "real-time",   "real_time",
+    "--realtime", "--real-time", "--real_time",
 };
 
 int main(int argc, char **argv) {
-    // real-time configuration
-    if (argc > 1) {
-        for (auto & realtime_key : realtime_keys) {
-            if (std::string(argv[1]) == realtime_key) {
-                lock_memory();
-                set_thread_scheduling(pthread_self(), SCHED_FIFO, 80);
-                break;
-            }
-        }
+  // real-time configuration
+  if (argc > 1) {
+    for (auto &realtime_key : realtime_keys) {
+      if (std::string(argv[1]) == realtime_key) {
+        lock_memory();
+        set_thread_scheduling(pthread_self(), SCHED_FIFO, 80);
+        break;
+      }
     }
+  }
 
-    rclcpp::init(argc, argv);
+  rclcpp::init(argc, argv);
 
-    rclcpp::executors::StaticSingleThreadedExecutor executor;
-    rclcpp::NodeOptions options;
+  rclcpp::executors::StaticSingleThreadedExecutor executor;
+  rclcpp::NodeOptions options;
 
-    rclcpp::Node::SharedPtr fake_socket_can_bridge_node = std::make_shared<FakeSocketCanBridge>(options);
+  rclcpp::Node::SharedPtr fake_socket_can_bridge_node =
+      std::make_shared<FakeSocketCanBridge>(options);
 
-    executor.add_node(fake_socket_can_bridge_node);
-    executor.spin();
-    rclcpp::shutdown();
+  executor.add_node(fake_socket_can_bridge_node);
+  executor.spin();
+  rclcpp::shutdown();
 
-    return 0;
+  return 0;
 }

@@ -18,9 +18,9 @@ ros2 launch nturt_rpi_can_latency_test nturt_rpi_can_latency_test.launch.py
 
 ### Launch Configuration
 
-There are couple launch parameters defined in the `nturt_rpi_can_latency_test.launch.py` launch file:
+There are couple ros2 parameters defined in the `nturt_rpi_can_latency_test.launch.py` launch file:
 
-1. `is_realtime` - bool: Whether to run the test in realtime mode, default tp `true`.
+1. `is_realtime` - bool: Whether to run the test in real-time mode, default to `true`.
 2. `using_fake_socket_can_bridge` - bool: Whether to use fake socket_can_bridge (only echoes the can messages sent from the test node back to it self), default to `false`.
 3. `send_id` - unsigned int: The can id that the can test message will be sent [^1], default to `0x010`.
 4. `receive_id` - unsigned int: The can id that will be received as the responding can test message [^1], default to `0x020`.
@@ -35,7 +35,9 @@ There are couple launch parameters defined in the `nturt_rpi_can_latency_test.la
 
 ### Plotting Tool
 
-There's also a plotting tool available for visualizing the test data, it can be run by
+There's also a plotting tool available for visualizing the test data.
+
+Usage:
 
 ```bash=
 ros2 run nturt_rpi_can_latency_test plot_test_result.py
