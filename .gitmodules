@@ -2,3 +2,6 @@
 	path = nturt_micro_ros_latency_test/nturt_micro_ros_latency_test_microcontroller/micro_ros_stm32cubemx_utils
 	url = https://github.com/micro-ROS/micro_ros_stm32cubemx_utils.git
 	branch = humble
+[submodule "nturt_integration_test/FTXUI"]
+	path = nturt_integration_test/FTXUI
+	url = https://github.com/ArthurSonzogni/FTXUI.git

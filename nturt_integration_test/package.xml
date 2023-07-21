@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+    <name>nturt_integration_test</name>
+    <version>0.0.0</version>
+    <description>ROS2 package for testing the whole control system.</description>
+    <maintainer email="jet22854111@gmail.com">QuantumSpawner</maintainer>
+    <author email="jet22854111@gmail.com">QuantumSpawner</author>
+    <license>TODO</license>
+
+    <!-- general dependencies -->
+    <depend>can_msgs</depend>
+    <depend>geometry_msgs</depend>
+    <depend>nturt_can_config</depend>
+    <depend>nturt_ros_interface</depend>
+    <depend>rclcpp</depend>
+    <depend>rclcpp_components</depend>
+    <depend>sensor_msgs</depend>
+
+    <!-- build dependencies -->
+    <buildtool_depend>ament_cmake</buildtool_depend>
+
+    <!-- test dependencies -->
+    <test_depend>ament_lint_auto</test_depend>
+    <test_depend>ament_lint_common</test_depend>
+
+    <export>
+        <build_type>ament_cmake</build_type>
+    </export>
+</package>
